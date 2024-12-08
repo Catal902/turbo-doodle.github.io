@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Pedidos de Zapatos</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f2e9; /* Fondo suave */
+            color: #6f4e37; /* Color de texto */
+        }
+        .btn-primary {
+            background-color: #d4af37; /* Gold Rose */
+            border-color: #d4af37;
+        }
+        .btn-primary:hover {
+            background-color: #c59a2e; /* Color más oscuro al pasar el mouse */
+        }
+        .btn-danger {
+            background-color: #c74b3a; /* Rojo para dar de baja */
+            border-color: #c74b3a;
+        }
+        .btn-danger:hover {
+            background-color: #a63a2e;
+        }
+        .card-header {
+            background-color: #d4af37; /* Gold Rose */
+            color: white;
+        }
+        .card-body {
+            background-color: #fff3e6; /* Fondo suave para el contenido */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5 text-center">Gestión de Pedidos de Zapatos</h1>
+        <form id="shoeOrderForm" action="guardar_pedido.php" method="POST">
+            <div class="form-group">
+                <label for="nombreZapato">Nombre del Zapato</label>
+                <input type="text" name="nombreZapato" class="form-control" id="nombreZapato" placeholder="Ingrese el nombre del zapato" required>
+            </div>
+            <div class="form-group">
+                <label for="descripcion">Descripción</label>
+                <textarea name="descripcion" class="form-control" id="descripcion" rows="3" placeholder="Ingrese la descripción del zapato" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="precio">Precio</label>
+                <input type="number" name="precio" class="form-control" id="precio" placeholder="Ingrese el precio del zapato" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Agregar Pedido</button>
+            <button type="button" class="btn btn-danger" onclick="darDeBaja()">Eliminar Pedido</button>
+            <button type="button" class="btn btn-warning" onclick="modificar()">Modificar Pedido</button>
+            <button type="button" class="btn btn-info" onclick="consultar()">Consultar Pedido</button>
+            <button type="button" class="btn btn-success" onclick="generarInforme()">Generar Informe</button>
+        </form>
+
+        <h2 class="mt-5">Pedidos de Zapatos Registrados</h2>
+        <div id="accordion">
+            <!-- Los pedidos se añadirán aquí -->
+        </div>
+
+        <div id="consulta" class="mt-5">
+            <h3>Consultar Pedido</h3>
+            <select id="pedidoSelect" class="form-control" onchange="mostrarDetalles()">
+                <option value="">Seleccione un pedido</option>
+                <!-- Opciones se llenarán dinámicamente -->
+            </select>
+            <div id="detallesPedido" class="mt-3"></div>
+        </div>
+    </div>
+
+    <script>
+        const pedidos = [];
+
+        document.getElementById('shoeOrderForm').addEventListener('submit', function(event) {
+            // Aquí puedes evitar que el formulario se envíe si deseas manejarlo completamente con JavaScript
+            // event.preventDefault();
+            const nombre = document.getElementById('nombreZapato').value;
+            const descripcion = document.getElementById('descripcion').value;
+            const precio = document.getElementById('precio').value;
+
+            const pedido = { nombre, descripcion, precio, estado: 'Activo' };
+            pedidos.push(pedido);
+            agregarPedidoATabla(pedido);
+            this.reset();
+            actualizarSelect(); // Actualiza el select de consulta
+        });
+
+        function agregarPedidoATabla(pedido) {
+            const accordion = document.getElementById('accordion');
+            const index = pedidos.length - 1; // Obtener el índice del último pedido
+            const card = `
+                <div class="card" id="pedido-${index}">
+                    <div class="card-header" id="heading${index}">
+                        <h5 class="mb-0">
+                            <button class="btn btn-link" data-toggle="collapse" data-target="#collapse${index}" aria-expanded="true" aria-controls="collapse${index}">
+                                ${pedido.nombre}
+                            </button>
+                        </h5>
+                    </div>
+                    <div id="collapse${index}" class="collapse" aria-labelledby="heading${index}" data-parent="#accordion">
+                        <div class="card-body">
+                            <strong>Descripción:</strong> ${pedido.descripcion}<br>
+                            <strong>Precio:</strong> $${pedido.precio}<br>
+                            <strong>Estado:</strong> ${pedido.estado}
+                        </div>
+                    </div>
+                </div>`;
+            accordion.innerHTML += card;
+        }
+
+        function darDeBaja() {
+            const nombre = prompt("Ingrese el nombre del zapato a eliminar:");
+            const index = pedidos.findIndex(p => p.nombre === nombre);
+            if (index !== -1) {
+                pedidos.splice(index, 1); // Eliminar el pedido del array
+                actualizarTabla(); // Actualizar la tabla
+                actualizarSelect(); // Actualizar el select de consulta
+            } else {
+                alert("Pedido no encontrado.");
+            }
+        }
+
+        function modificar() {
+            const nombre = prompt("Ingrese el nombre del zapato a modificar:");
+            const pedido = pedidos.find(p => p.nombre === nombre);
+            if (pedido) {
+                const nuevaDescripcion = prompt("Ingrese la nueva descripción:", pedido.descripcion);
+                const nuevoPrecio = prompt("Ingrese el nuevo precio:", pedido.precio);
+                pedido.descripcion = nuevaDescripcion;
+                pedido.precio = nuevoPrecio;
+                actualizarTabla();
+            } else {
+                alert("Pedido no encontrado.");
+            }
+        }
+
+        function consultar() {
+            // Se ha modificado para que no haga nada, ya que ahora se usa el select
+        }
+
+        function mostrarDetalles() {
+            const select = document.getElementById('pedidoSelect');
+            const index = select.value;
+            const detallesDiv = document.getElementById('detallesPedido');
+
+            if (index) {
+                const pedido = pedidos[index];
+                detallesDiv.innerHTML = `
+                    <strong>Nombre:</strong> ${pedido.nombre}<br>
+                    <strong>Descripción:</strong> ${pedido.descripcion}<br>
+                    <strong>Precio:</strong> $${pedido.precio}<br>
+                    <strong>Estado:</strong> ${pedido.estado}
+                `;
+            } else {
+                detallesDiv.innerHTML = '';
+            }
+        }
+
+        function generarInforme() {
+            const totalPedidos = pedidos.length;
+            let informe = `Informe de Pedidos de Zapatos\n\nTotal de pedidos registrados: ${totalPedidos}\n\n`;
+            pedidos.forEach((pedido, index) => {
+                informe += `Pedido #${index + 1}:\n`;
+                informe += `Nombre: ${pedido.nombre}\n`;
+                informe += `Descripción: ${pedido.descripcion}\n`;
+                informe += `Precio: $${pedido.precio}\n`;
+                informe += `Estado: ${pedido.estado}\n\n`;
+            });
+            alert(informe);
+        }
+
+        function actualizarTabla() {
+            const accordion = document.getElementById('accordion');
+            accordion.innerHTML = '';
+            pedidos.forEach(agregarPedidoATabla);
+        }
+
+        function actualizarSelect() {
+            const select = document.getElementById('pedidoSelect');
+            select.innerHTML = '<option value="">Seleccione un pedido</option>'; // Reiniciar opciones
+            pedidos.forEach((pedido, index) => {
+                const option = document.createElement('option');
+                option.value = index; // Usar el índice como valor
+                option.textContent = pedido.nombre; // Mostrar nombre del pedido
+                select.appendChild(option);
+            });
+        }
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
